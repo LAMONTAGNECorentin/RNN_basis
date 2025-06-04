@@ -16,8 +16,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-print("init")
-
 #Split sequence function to create training batch
 def split_sequence(sequence, split_size):
     X, Y = list(), list()
