@@ -34,7 +34,7 @@ dataset_test = []
 for i in range(10,110):
     dataset_test.append(i)
     
-
+print("init")
 
 split_size = 5
 X, Y = split_sequence(dataset, split_size)
