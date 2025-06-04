@@ -106,6 +106,7 @@ for epoch in range(num_epochs):
             predicted, _, _ = model(trainXt, h0, c0)
             prediction.append(predicted.detach().numpy())
 
+
 torch.save(model.state_dict(), 'test')
         
 model.eval()
