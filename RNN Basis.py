@@ -15,28 +15,15 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import dataset_creator as dc
 
-#Split sequence function to create training batch
-def split_sequence(sequence, split_size):
-    X, Y = list(), list()
-    for i in range(len(sequence)-split_size):
-        x, y = sequence[i:(i+split_size)], sequence[i+split_size]
-        X.append(x)
-        Y.append(y)
-    return np.array(X), np.array(Y)                   #return as numpy array
-
-dataset = []
-for i in range(0,100):
-    dataset.append(i)
-
-dataset_test = []
-for i in range(10,110):
-    dataset_test.append(i)
+dataset = dc.serie(0,100,1)
+dataset_test = dc.serie(10,110,1)
 
 
 split_size = 5
-X, Y = split_sequence(dataset, split_size)
-Xt, Yt = split_sequence(dataset_test, split_size)
+X, Y = dc.split_sequence(dataset, split_size)
+Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
 # 	print(X[i], Y[i])
 
