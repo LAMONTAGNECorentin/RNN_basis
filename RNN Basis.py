@@ -17,11 +17,10 @@ import matplotlib.pyplot as plt
 import math
 import dataset_creator as dc
 
-dataset = dc.serie(0,100,1)
-dataset_test = dc.serie(10,110,1)
+dataset = dc.serie(0,500,1)
+dataset_test = dc.serie(10,510,1)
 
-
-split_size = 5
+split_size = 4
 X, Y = dc.split_sequence(dataset, split_size)
 Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
@@ -51,12 +50,12 @@ class LSTM_model(nn.Module):
         return out, hn, cn
 
 #----HYPERPARAMETERS----
-lr=0.005
+lr=0.001
 input_dim=1
-hidden_dim= 128
+hidden_dim= 256
 layer_dim=1
 output_dim=1
-num_epochs = 2000
+num_epochs = 1000
 h0, c0 = None, None
 #----------------------
 
