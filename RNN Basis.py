@@ -17,8 +17,11 @@ import matplotlib.pyplot as plt
 import math
 import dataset_creator as dc
 
-dataset = dc.serie(0,500,1)
-dataset_test = dc.serie(10,510,1)
+# dataset = dc.serie(0,500,1)
+# dataset_test = dc.serie(10,510,1)
+
+dataset = dc.sinus(0,100,0.1)
+dataset_test = dc.sinus(10,110,0.1)
 
 split_size = 4
 X, Y = dc.split_sequence(dataset, split_size)
@@ -52,7 +55,7 @@ class LSTM_model(nn.Module):
 #----HYPERPARAMETERS----
 lr=0.001
 input_dim=1
-hidden_dim= 256
+hidden_dim= 64
 layer_dim=1
 output_dim=1
 num_epochs = 1000
@@ -99,26 +102,26 @@ predicted, _, _ = model(trainXt, h0, c0)
 original = dataset_test[split_size:]
 time_steps = np.arange(split_size, len(dataset_test))
 
-# plt.figure(figsize=(12, 6))
+plt.figure(figsize=(12, 6))
 
-# plt.subplot(1,4,1)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,2)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,3)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,4)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,1)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,2)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,3)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,4)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
 
-# plt.title('LSTM Model Predictions vs. Original Data')
-# plt.xlabel('Time Step')
-# plt.ylabel('Value')
-# plt.legend()
-# plt.show()
+plt.title('LSTM Model Predictions vs. Original Data')
+plt.xlabel('Time Step')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
 
 
 plt.figure(figsize=(12, 6))
