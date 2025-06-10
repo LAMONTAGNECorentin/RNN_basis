@@ -23,13 +23,13 @@ import csv
 
 dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=1, style=0)
 dataset_test = dc.sinus(start=10, end=110, step=0.1, amplitude=1, style=0)
-# dataset_test = dc.sinus(start=0, end=90, step=0.1, amplitude=1, style=0)
+dataset_test = dc.sinus(start=0, end=90, step=0.1, amplitude=1, style=0)
 dataset_test =[]
 x = len(dataset)-len(dataset_test)
 for i in range(0,x):
     dataset_test.append(0)
 
-split_size = 70
+split_size = 35
 X, Y = dc.split_sequence(dataset, split_size)
 Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
@@ -61,10 +61,10 @@ class LSTM_model(nn.Module):
 #----HYPERPARAMETERS----
 lr=0.001
 input_dim=1
-hidden_dim= 256
+hidden_dim= 32
 layer_dim=1
 output_dim=1
-num_epochs = 50
+num_epochs = 250
 h0, c0 = None, None
 #----------------------
 
@@ -109,26 +109,26 @@ print(model(trainXt, h0, c0))
 original = dataset_test[split_size:]
 time_steps = np.arange(split_size, len(dataset_test))
 
-# plt.figure(figsize=(12, 6))
+plt.figure(figsize=(30, 6))
 
-# plt.subplot(1,4,1)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,2)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,3)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,4)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,1)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,2)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,3)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
+plt.subplot(1,4,4)
+plt.plot(time_steps, original, label='Original Data')
+plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
 
-# plt.title('LSTM Model Predictions vs. Original Data')
-# plt.xlabel('Time Step')
-# plt.ylabel('Value')
-# plt.legend()
-# plt.show()
+plt.title('LSTM Model Predictions vs. Original Data')
+plt.xlabel('Time Step')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
 
 
 plt.figure(figsize=(12, 6))
