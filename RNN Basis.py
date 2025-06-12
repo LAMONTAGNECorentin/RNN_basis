@@ -18,8 +18,8 @@ import math
 import dataset_creator as dc
 import csv
 
-# dataset = dc.serie(0,500,1)
-# dataset_test = dc.serie(10,510,1)
+# dataset = dc.linear(0,500,1)
+# dataset_test = dc.linear(10,510,1)
 
 dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=1, style=0)
 dataset_test = dc.sinus(start=10, end=110, step=0.1, amplitude=1, style=0)
@@ -104,7 +104,10 @@ torch.save(model.state_dict(), 'test')
         
 model.eval()
 predicted, _, _ = model(trainXt, h0, c0)
-print(model(trainXt, h0, c0))
+
+with open('prediction.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerows(predicted.detach().numpy())
 
 original = dataset_test[split_size:]
 time_steps = np.arange(split_size, len(dataset_test))
@@ -148,6 +151,3 @@ plt.ylabel('Value')
 plt.legend()
 plt.show()
 
-with open('prediction.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerows(predicted.detach().numpy())

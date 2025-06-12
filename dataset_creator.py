@@ -12,7 +12,7 @@ def split_sequence(sequence, split_size):
     return np.array(X), np.array(Y)                   #return as numpy array
 
 #Create linear serie
-def serie(start, end, step=1):
+def linear(start, end, step=1):
     dataset = []
     for i in np.arange(start, end, step):
         dataset.append(i)
