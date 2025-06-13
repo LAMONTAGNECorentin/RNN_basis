@@ -21,15 +21,12 @@ import csv
 # dataset = dc.linear(0,500,1)
 # dataset_test = dc.linear(10,510,1)
 
-dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=1, style=0)
-dataset_test = dc.sinus(start=10, end=110, step=0.1, amplitude=1, style=0)
-dataset_test = dc.sinus(start=0, end=90, step=0.1, amplitude=1, style=0)
-dataset_test =[]
-x = len(dataset)-len(dataset_test)
-for i in range(0,x):
-    dataset_test.append(0)
+dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=3, style=1)
+dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=3, style=1)
+print(dataset_test[-1])
+dataset_test[-1]=-1
 
-split_size = 35
+split_size = 60
 X, Y = dc.split_sequence(dataset, split_size)
 Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
@@ -37,38 +34,40 @@ Xt, Yt = dc.split_sequence(dataset_test, split_size)
 
 trainX = torch.tensor(X[:, :, None], dtype=torch.float32)
 trainY = torch.tensor(Y[:, None], dtype=torch.float32)
+print(trainX.size())
 
-trainXt = torch.tensor(Xt[:, :, None], dtype=torch.float32)
-trainYt = torch.tensor(Yt[:, None], dtype=torch.float32)
+testX = torch.tensor(Xt[:, :, None], dtype=torch.float32)
+testY = torch.tensor(Yt[:, None], dtype=torch.float32)
+print(testX.size())
 
 class LSTM_model(nn.Module):
-    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
+    def __init__(self, input_size, hidden_size, num_layers, output_size):
         super(LSTM_model, self).__init__()
-        self.hidden_dim = hidden_dim
-        self.layer_dim = layer_dim
-        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.0, bidirectional=False, proj_size=0)
+        self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, h0=None, c0=None):
         if h0 is None or c0 is None:
-            h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).to(x.device)   #Initialisation h0=0
-            c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).to(x.device)   #Initialisation c0=0
+            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)   #Initialisation h0=0
+            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)   #Initialisation c0=0
         
         out, (hn, cn) = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
         return out, hn, cn
 
 #----HYPERPARAMETERS----
-lr=0.001
-input_dim=1
-hidden_dim= 32
-layer_dim=1
-output_dim=1
-num_epochs = 250
+lr=0.005
+input_size=1
+hidden_size= 120
+num_layers=1
+output_size=1
+num_epochs = 400
 h0, c0 = None, None
 #----------------------
 
-model = LSTM_model(input_dim, hidden_dim, layer_dim, output_dim)
+model = LSTM_model(input_size, hidden_size, num_layers, output_size)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr)
 
@@ -96,14 +95,14 @@ for epoch in range(num_epochs):
     if (epoch+1) % int(num_epochs/4) == 0:
         model.eval()
         with torch.no_grad():
-            predicted, _, _ = model(trainXt, h0, c0)
+            predicted, _, _ = model(testX, h0, c0)
             prediction.append(predicted.detach().numpy())
 
 
 torch.save(model.state_dict(), 'test')
         
 model.eval()
-predicted, _, _ = model(trainXt, h0, c0)
+predicted, _, _ = model(testX, h0, c0)
 
 with open('prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
@@ -112,38 +111,39 @@ with open('prediction.csv', 'w', newline='') as file:
 original = dataset_test[split_size:]
 time_steps = np.arange(split_size, len(dataset_test))
 
-plt.figure(figsize=(30, 6))
+# plt.figure(figsize=(30, 6))
 
-plt.subplot(1,4,1)
-plt.plot(time_steps, original, label='Original Data')
-plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
-plt.subplot(1,4,2)
-plt.plot(time_steps, original, label='Original Data')
-plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
-plt.subplot(1,4,3)
-plt.plot(time_steps, original, label='Original Data')
-plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
-plt.subplot(1,4,4)
-plt.plot(time_steps, original, label='Original Data')
-plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
+# plt.subplot(1,4,1)
+# plt.plot(time_steps, original, label='Original Data')
+# plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
+# plt.subplot(1,4,2)
+# plt.plot(time_steps, original, label='Original Data')
+# plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
+# plt.subplot(1,4,3)
+# plt.plot(time_steps, original, label='Original Data')
+# plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
+# plt.subplot(1,4,4)
+# plt.plot(time_steps, original, label='Original Data')
+# plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
 
-plt.title('LSTM Model Predictions vs. Original Data')
-plt.xlabel('Time Step')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+# plt.title('LSTM Model Predictions vs. Original Data')
+# plt.xlabel('Time Step')
+# plt.ylabel('Value')
+# plt.legend()
+# plt.show()
 
 
 plt.figure(figsize=(12, 6))
+
+plt.subplot(1,2,1)
 plt.plot(Loss_history, label='Loss')
 plt.title('LSTM Loss evolution')
 plt.xlabel('Epoch')
 plt.ylabel('Value')
 plt.legend()
-plt.show()
 
-plt.figure(figsize=(12, 6))
-plt.plot(time_steps, original, label='Original Data')
+plt.subplot(1,2,2)
+plt.plot(time_steps, testY, label='Original Data')
 plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
 plt.title('LSTM Model Predictions vs. Original Data')
 plt.xlabel('Time Step')
