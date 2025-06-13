@@ -17,8 +17,9 @@ import matplotlib.pyplot as plt
 import math
 import dataset_creator as dc
 import csv
+import torch.optim as optim
 
-torch.manual_seed(0)
+torch.manual_seed(100)
 
 # dataset = dc.linear(0,500,1)
 # dataset_test = dc.linear(10,510,1)
@@ -47,7 +48,7 @@ class LSTM_model(nn.Module):
         super(LSTM_model, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.3, bidirectional=False, proj_size=0)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.0, bidirectional=False, proj_size=0)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, h0=None, c0=None):
@@ -73,7 +74,7 @@ input_size=1
 hidden_size= 16
 num_layers=1
 output_size=1
-num_epochs = 1000
+num_epochs = 1500
 h0, c0 = None, None
 #----------------------------------------------------------------------------------------
 
@@ -86,6 +87,7 @@ prediction = []
 
 for epoch in range(num_epochs):
     model.train()
+    #add scheduler here
     optimizer.zero_grad()
 
     outputs, h0, c0 = model(trainX, h0, c0)
