@@ -45,7 +45,7 @@ class LSTM_model(nn.Module):
         super(LSTM_model, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.0, bidirectional=False, proj_size=0)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.3, bidirectional=False, proj_size=0)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, h0=None, c0=None):
@@ -57,15 +57,23 @@ class LSTM_model(nn.Module):
         out = self.fc(out[:, -1, :])
         return out, hn, cn
 
-#----HYPERPARAMETERS----
-lr=0.005
+time_steps = np.arange(split_size, len(dataset_test))
+
+plt.ion()
+
+figure, ax = plt.subplots(figsize=(8, 6))
+(line1,) = ax.plot(time_steps, testY)
+plt.plot(time_steps, testY, label='Original Data')
+
+#-------------------------------HYPERPARAMETERS-------------------------------------------
+lr=0.01
 input_size=1
-hidden_size= 120
-num_layers=1
+hidden_size= 32
+num_layers=2
 output_size=1
-num_epochs = 400
+num_epochs = 1000
 h0, c0 = None, None
-#----------------------
+#----------------------------------------------------------------------------------------
 
 model = LSTM_model(input_size, hidden_size, num_layers, output_size)
 criterion = nn.MSELoss()
@@ -91,7 +99,16 @@ for epoch in range(num_epochs):
 
     if (epoch+1) % 10 == 0:
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+        model.eval()
+        predicted, _, _ = model(testX, h0, c0)
+
+        plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
+        line1.set_xdata(time_steps)
+        line1.set_ydata(predicted.detach().numpy())
+        figure.canvas.draw()
+        figure.canvas.flush_events()
         
+
     if (epoch+1) % int(num_epochs/4) == 0:
         model.eval()
         with torch.no_grad():
@@ -100,7 +117,9 @@ for epoch in range(num_epochs):
 
 
 torch.save(model.state_dict(), 'test')
-        
+
+plt.ioff()
+
 model.eval()
 predicted, _, _ = model(testX, h0, c0)
 
@@ -109,32 +128,8 @@ with open('prediction.csv', 'w', newline='') as file:
     writer.writerows(predicted.detach().numpy())
 
 original = dataset_test[split_size:]
-time_steps = np.arange(split_size, len(dataset_test))
-
-# plt.figure(figsize=(30, 6))
-
-# plt.subplot(1,4,1)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-4], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,2)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-3], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,3)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-2], label='Predicted Data', linestyle='--')
-# plt.subplot(1,4,4)
-# plt.plot(time_steps, original, label='Original Data')
-# plt.plot(time_steps, prediction[-1], label='Predicted Data', linestyle='--')
-
-# plt.title('LSTM Model Predictions vs. Original Data')
-# plt.xlabel('Time Step')
-# plt.ylabel('Value')
-# plt.legend()
-# plt.show()
-
 
 plt.figure(figsize=(12, 6))
-
 plt.subplot(1,2,1)
 plt.plot(Loss_history, label='Loss')
 plt.title('LSTM Loss evolution')
