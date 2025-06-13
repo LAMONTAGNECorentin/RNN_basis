@@ -18,15 +18,17 @@ import math
 import dataset_creator as dc
 import csv
 
+torch.manual_seed(0)
+
 # dataset = dc.linear(0,500,1)
 # dataset_test = dc.linear(10,510,1)
 
-dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=3, style=1)
-dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=3, style=1)
-print(dataset_test[-1])
-dataset_test[-1]=-1
+dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=1)
+dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=1)
+# print(dataset_test[-1])
+# dataset_test[-1]=-1
 
-split_size = 60
+split_size = 10
 X, Y = dc.split_sequence(dataset, split_size)
 Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
@@ -68,8 +70,8 @@ plt.plot(time_steps, testY, label='Original Data')
 #-------------------------------HYPERPARAMETERS-------------------------------------------
 lr=0.01
 input_size=1
-hidden_size= 32
-num_layers=2
+hidden_size= 16
+num_layers=1
 output_size=1
 num_epochs = 1000
 h0, c0 = None, None
