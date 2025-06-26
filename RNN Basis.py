@@ -23,13 +23,35 @@ import Myfunction
 
 torch.manual_seed(100)
 
-dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
-dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
+# dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
+# dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
+
+#----------------------------------------------------------------------------------------------------------
+output_size = 1
+test_dataset_size = 10000
+TRAIN_SET_NUM = 10
+SEQUENCE_SIZE = 10
+predict_sample_num = 1
+batchsize = 1
+fs_resample = 44.1
+
+
+Ts = float(1/(fs_resample))
+train_dataset_size = int(Ts_train/Ts)
 
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = Myfunction.read_noise('')
+
+kind = 'cubic'
+fs_orig=19.98*10**3
+size = int(len(f16_ref) * fs_resample / fs_orig)
+
 f16_ref_temp, leopard_ref_temp, volvo_ref_temp, destroyerengine_ref_temp = np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1])
 # アップサンプリング実行を一時保存用配列へ
 f16_ref_temp = Myfunction.UPSAMPLING(signal=f16_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
+
+f16_pri, leopard_pri, volvo_pri, destroyerengine_pri = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
+
+divide = int(f16_pri.shape[0]*0.5)
 
 NOISE_train_ref = np.vstack([f16_ref[:divide], leopard_ref[:divide], volvo_ref[:divide], destroyerengine_ref[:divide]])
 NOISE_train_pri = np.vstack([f16_pri[:divide], leopard_pri[:divide], volvo_pri[:divide], destroyerengine_pri[:divide]])
@@ -37,6 +59,51 @@ NOISE_train_pri = np.vstack([f16_pri[:divide], leopard_pri[:divide], volvo_pri[:
 # (4, 5203786, 1)
 NOISE_test_ref = np.stack([f16_ref[divide:], leopard_ref[divide:], volvo_ref[divide:], destroyerengine_ref[divide:]], axis=0)
 NOISE_test_pri = np.stack([f16_pri[divide:], leopard_pri[divide:], volvo_pri[divide:], destroyerengine_pri[divide:]], axis=0)
+
+r_test = np.random.randint(0,len(NOISE_test_ref[0])-test_dataset_size-max(SEQUENCE_SIZE))
+
+test_list = np.arange(r_test,r_test+test_dataset_size, dtype = 'int')
+
+# 学習用のサンプル区間についてのリストを作成
+r_train_list = np.random.randint(0,len(NOISE_train_ref)-train_dataset_size-max(SEQUENCE_SIZE), TRAIN_SET_NUM)
+rand_train_list = np.zeros([TRAIN_SET_NUM, train_dataset_size],dtype = 'int')
+for i in range(TRAIN_SET_NUM):
+    rand_train_list[i,:] = np.arange(r_train_list[i],r_train_list[i]+train_dataset_size, dtype = 'int')
+
+# ランダムにtrain_dataset_aize個サンプルを取り出してデータセットを作る
+train_ref = np.zeros([TRAIN_SET_NUM*train_dataset_size, SEQUENCE_SIZE])
+target_train = np.zeros([TRAIN_SET_NUM*train_dataset_size, output_size])
+# trainセットの作成
+for train_set_num in range(TRAIN_SET_NUM):
+    for i in range(train_dataset_size) :
+        r = rand_train_list[train_set_num,i]
+        train_ref[train_dataset_size*train_set_num + i] = NOISE_train_ref[r:r+SEQUENCE_SIZE,0] # train:[train_dataset_size, 20]######################################################### 入力はref
+        target_train[train_dataset_size*train_set_num + i] =NOISE_train_pri[r+SEQUENCE_SIZE,0] #target_train:[train_dataset_size, 1]######################################################### 教師はpri
+
+# テストセットの生成
+test = np.zeros([4, test_dataset_size, SEQUENCE_SIZE])
+target_test = np.zeros([4, test_dataset_size, output_size])
+test_for_Einput_to_ref = np.zeros([4, test_dataset_size, output_size]) # Einputで、参照信号に対するノイズ元帥率を計算するための、参照信号のエネルギー
+# NOISE_testのなかからランダムにtest_dataset_size個のデータを取り出す。    
+for i in range(test_dataset_size) : 
+    r = test_list[i]
+    for j in range(4):
+        test[j, i] = NOISE_test_ref[j,r:r+SEQUENCE_SIZE,0] ############################################################## 入力はref
+        target_test[j, i] = NOISE_test_pri[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]######################################################### 教師はpri
+        test_for_Einput_to_ref[j,i] = NOISE_test_ref[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]
+
+train_ref = torch.DoubleTensor(train_ref[:,:,np.newaxis])
+target_train = torch.DoubleTensor(target_train)
+test = torch.DoubleTensor(test[:,:,:,np.newaxis])
+target_test = torch.DoubleTensor(target_test)
+
+train_dataset = torch.utils.data.TensorDataset(train_ref, target_train)
+test_dataset = [torch.utils.data.TensorDataset(test[0], target_test[0]),torch.utils.data.TensorDataset(test[1], target_test[1]),torch.utils.data.TensorDataset(test[2], target_test[2]),torch.utils.data.TensorDataset(test[3], target_test[3])]
+
+trainloader = torch.utils.data.DataLoader(train_dataset, batch_size = batchsize , num_workers = 2)
+testloader = [torch.utils.data.DataLoader(test_dataset[0], batch_size = 1, num_workers = 2),torch.utils.data.DataLoader(test_dataset[1], batch_size = 1, num_workers = 2),torch.utils.data.DataLoader(test_dataset[2], batch_size = 1, num_workers = 2),torch.utils.data.DataLoader(test_dataset[3], batch_size = 1, num_workers = 2)]
+
+#----------------------------------------------------------------------------------------------------------
 
 split_size = 30
 X, Y = dc.split_sequence(dataset, split_size)
