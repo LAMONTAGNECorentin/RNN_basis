@@ -31,18 +31,19 @@ output_size = 1
 test_dataset_size = 10000
 TRAIN_SET_NUM = 10
 SEQUENCE_SIZE = 10
+Ts_train = 0.001                # Training period
 predict_sample_num = 1
 batchsize = 1
-fs_resample = 44.1
+fs_resample = 44.1              # Frequency
 
 
-Ts = float(1/(fs_resample))
-train_dataset_size = int(Ts_train/Ts)
+Ts = float(1/(fs_resample))             # frequency to periode
+train_dataset_size = int(Ts_train/Ts) 
 
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = Myfunction.read_noise('')
 
 kind = 'cubic'
-fs_orig=19.98*10**3
+fs_orig=19.98*10**3             # 19.98Khz
 size = int(len(f16_ref) * fs_resample / fs_orig)
 
 f16_ref_temp, leopard_ref_temp, volvo_ref_temp, destroyerengine_ref_temp = np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1])
