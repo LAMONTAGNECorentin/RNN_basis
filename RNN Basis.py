@@ -18,18 +18,27 @@ import math
 import dataset_creator as dc
 import csv
 import torch.optim as optim
+import model
+import Myfunction
 
 torch.manual_seed(100)
 
-# dataset = dc.linear(0,500,1)
-# dataset_test = dc.linear(10,510,1)
+dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
+dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
 
-dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=1)
-dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=1)
-# print(dataset_test[-1])
-# dataset_test[-1]=-1
+f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = Myfunction.read_noise('')
+f16_ref_temp, leopard_ref_temp, volvo_ref_temp, destroyerengine_ref_temp = np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1])
+# アップサンプリング実行を一時保存用配列へ
+f16_ref_temp = Myfunction.UPSAMPLING(signal=f16_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
 
-split_size = 10
+NOISE_train_ref = np.vstack([f16_ref[:divide], leopard_ref[:divide], volvo_ref[:divide], destroyerengine_ref[:divide]])
+NOISE_train_pri = np.vstack([f16_pri[:divide], leopard_pri[:divide], volvo_pri[:divide], destroyerengine_pri[:divide]])
+# ################################################################################################
+# (4, 5203786, 1)
+NOISE_test_ref = np.stack([f16_ref[divide:], leopard_ref[divide:], volvo_ref[divide:], destroyerengine_ref[divide:]], axis=0)
+NOISE_test_pri = np.stack([f16_pri[divide:], leopard_pri[divide:], volvo_pri[divide:], destroyerengine_pri[divide:]], axis=0)
+
+split_size = 30
 X, Y = dc.split_sequence(dataset, split_size)
 Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
@@ -43,23 +52,6 @@ testX = torch.tensor(Xt[:, :, None], dtype=torch.float32)
 testY = torch.tensor(Yt[:, None], dtype=torch.float32)
 print(testX.size())
 
-class LSTM_model(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(LSTM_model, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True, batch_first=True, dropout=0.0, bidirectional=False, proj_size=0)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x, h0=None, c0=None):
-        if h0 is None or c0 is None:
-            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)   #Initialisation h0=0
-            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)   #Initialisation c0=0
-        
-        out, (hn, cn) = self.lstm(x, (h0, c0))
-        out = self.fc(out[:, -1, :])
-        return out, hn, cn
-
 time_steps = np.arange(split_size, len(dataset_test))
 
 plt.ion()
@@ -69,16 +61,16 @@ figure, ax = plt.subplots(figsize=(8, 6))
 plt.plot(time_steps, testY, label='Original Data')
 
 #-------------------------------HYPERPARAMETERS-------------------------------------------
-lr=0.01
+lr=0.005
 input_size=1
 hidden_size= 16
 num_layers=1
 output_size=1
-num_epochs = 1500
+num_epochs = 1000
 h0, c0 = None, None
 #----------------------------------------------------------------------------------------
 
-model = LSTM_model(input_size, hidden_size, num_layers, output_size)
+model = model.LSTM_model(input_size, hidden_size, num_layers, output_size)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr)
 
