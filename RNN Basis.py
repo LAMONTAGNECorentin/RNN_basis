@@ -23,8 +23,8 @@ import Myfunction
 
 torch.manual_seed(100)
 
-# dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
-# dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
+dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
+dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
 
 #----------------------------------------------------------------------------------------------------------
 output_size = 1
@@ -36,37 +36,51 @@ predict_sample_num = 1
 batchsize = 1
 fs_resample = 44.1              # Frequency
 
+fs_resample_khz = fs_resample
+fs_resample = fs_resample*10**3
 
 Ts = float(1/(fs_resample))             # frequency to periode
 train_dataset_size = int(Ts_train/Ts) 
 
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = Myfunction.read_noise('')
+f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = f16_ref/(2**15), leopard_ref/(2**15), volvo_ref/(2**15), destroyerengine_ref/(2**15)
+
 
 kind = 'cubic'
 fs_orig=19.98*10**3             # 19.98Khz
 size = int(len(f16_ref) * fs_resample / fs_orig)
 
+# 一時保存用配列
 f16_ref_temp, leopard_ref_temp, volvo_ref_temp, destroyerengine_ref_temp = np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1])
 # アップサンプリング実行を一時保存用配列へ
 f16_ref_temp = Myfunction.UPSAMPLING(signal=f16_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
+leopard_ref_temp = Myfunction.UPSAMPLING(signal=leopard_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
+volvo_ref_temp = Myfunction.UPSAMPLING(signal=volvo_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
+destroyerengine_ref_temp = Myfunction.UPSAMPLING(signal=destroyerengine_ref,fs_orig=fs_orig, fs_resample=fs_resample, KIND=kind)
+# この後使う配列へ代入
+f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1]),np.zeros([size,1])
 
+# f16, leopard, volvo, destroyerengine =f16_temp, leopard_temp, volvo_temp, destroyerengine_temp
+f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
+# 一次信号の変数に、参照信号の値を代入する(_pri = _ref)
 f16_pri, leopard_pri, volvo_pri, destroyerengine_pri = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
 
 divide = int(f16_pri.shape[0]*0.5)
 
 NOISE_train_ref = np.vstack([f16_ref[:divide], leopard_ref[:divide], volvo_ref[:divide], destroyerengine_ref[:divide]])
 NOISE_train_pri = np.vstack([f16_pri[:divide], leopard_pri[:divide], volvo_pri[:divide], destroyerengine_pri[:divide]])
+
 # ################################################################################################
 # (4, 5203786, 1)
 NOISE_test_ref = np.stack([f16_ref[divide:], leopard_ref[divide:], volvo_ref[divide:], destroyerengine_ref[divide:]], axis=0)
 NOISE_test_pri = np.stack([f16_pri[divide:], leopard_pri[divide:], volvo_pri[divide:], destroyerengine_pri[divide:]], axis=0)
 
-r_test = np.random.randint(0,len(NOISE_test_ref[0])-test_dataset_size-max(SEQUENCE_SIZE))
+r_test = np.random.randint(0,len(NOISE_test_ref[0])-test_dataset_size-SEQUENCE_SIZE)
 
 test_list = np.arange(r_test,r_test+test_dataset_size, dtype = 'int')
 
 # 学習用のサンプル区間についてのリストを作成
-r_train_list = np.random.randint(0,len(NOISE_train_ref)-train_dataset_size-max(SEQUENCE_SIZE), TRAIN_SET_NUM)
+r_train_list = np.random.randint(0,len(NOISE_train_ref)-train_dataset_size-SEQUENCE_SIZE, TRAIN_SET_NUM)
 rand_train_list = np.zeros([TRAIN_SET_NUM, train_dataset_size],dtype = 'int')
 for i in range(TRAIN_SET_NUM):
     rand_train_list[i,:] = np.arange(r_train_list[i],r_train_list[i]+train_dataset_size, dtype = 'int')
@@ -94,6 +108,7 @@ for i in range(test_dataset_size) :
         test_for_Einput_to_ref[j,i] = NOISE_test_ref[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]
 
 train_ref = torch.DoubleTensor(train_ref[:,:,np.newaxis])
+print(f'train_ref {np.shape(train_ref)}')
 target_train = torch.DoubleTensor(target_train)
 test = torch.DoubleTensor(test[:,:,:,np.newaxis])
 target_test = torch.DoubleTensor(target_test)
@@ -106,21 +121,28 @@ testloader = [torch.utils.data.DataLoader(test_dataset[0], batch_size = 1, num_w
 
 #----------------------------------------------------------------------------------------------------------
 
+
 split_size = 30
-X, Y = dc.split_sequence(dataset, split_size)
-Xt, Yt = dc.split_sequence(dataset_test, split_size)
+# X, Y = dc.split_sequence(dataset, split_size)
+# Xt, Yt = dc.split_sequence(dataset_test, split_size)
 # for i in range(len(X)):
 # 	print(X[i], Y[i])
 
-trainX = torch.tensor(X[:, :, None], dtype=torch.float32)
-trainY = torch.tensor(Y[:, None], dtype=torch.float32)
-print(trainX.size())
+trainX, trainY = train_ref, target_train
+testX, testY = test, target_test 
 
-testX = torch.tensor(Xt[:, :, None], dtype=torch.float32)
-testY = torch.tensor(Yt[:, None], dtype=torch.float32)
-print(testX.size())
+# trainX = torch.tensor(X[:, :, None], dtype=torch.float32)
+# trainY = torch.tensor(Y[:, None], dtype=torch.float32)
+print(f'trainX {trainX.size()}')
 
-time_steps = np.arange(split_size, len(dataset_test))
+# testX = torch.tensor(Xt[:, :, None], dtype=torch.float32)
+# testY = torch.tensor(Yt[:, None], dtype=torch.float32)
+print(f'testX {testX.size()}')
+
+# time_steps = np.arange(split_size, len(dataset_test))
+time_steps = np.arange(split_size, 10030)
+
+print(f'testY dim {np.shape(testY)}')
 
 plt.ion()
 
@@ -209,4 +231,3 @@ plt.xlabel('Time Step')
 plt.ylabel('Value')
 plt.legend()
 plt.show()
-
