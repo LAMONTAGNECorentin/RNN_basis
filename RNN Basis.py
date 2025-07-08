@@ -121,33 +121,33 @@ testloader = [torch.utils.data.DataLoader(test_dataset[0], batch_size = 1, num_w
 #----------------------------------------------------------------------------------------------------------
 
 
-train_X, train_Y = dc.split_sequence(dataset, SEQUENCE_SIZE)
-test_X, test_Y = dc.split_sequence(dataset_test, SEQUENCE_SIZE)
-# for i in range(len(X)):
-# 	print(X[i], Y[i])
+# train_X, train_Y = dc.split_sequence(dataset, SEQUENCE_SIZE)
+# test_X, test_Y = dc.split_sequence(dataset_test, SEQUENCE_SIZE)
+# # for i in range(len(X)):
+# # 	print(X[i], Y[i])
 
-trainX = torch.tensor(train_X[:, :, None], dtype=torch.float32)
-trainY = torch.tensor(train_Y[:, None], dtype=torch.float32)
-print(f'trainX {trainX.size()}')
-
-testX = torch.tensor(test_X[:, :, None], dtype=torch.float32)
-testY = torch.tensor(test_Y[:, None], dtype=torch.float32)
-print(f'testX {testX.size()}')
-
-time_steps = np.arange(SEQUENCE_SIZE, len(dataset_test))
-
-# train_X, train_Y = train_ref, target_train
-# test_X, test_Y = test[0,:,:,:], target_test[0,:,:]
-
-# trainX = torch.tensor(train_X[:, :], dtype=torch.float32)
-# trainY = torch.tensor(train_Y[:], dtype=torch.float32)
+# trainX = torch.tensor(train_X[:, :, None], dtype=torch.float32)
+# trainY = torch.tensor(train_Y[:, None], dtype=torch.float32)
 # print(f'trainX {trainX.size()}')
 
-# testX = torch.tensor(test_X[:, :], dtype=torch.float32)
-# testY = torch.tensor(test_Y[:], dtype=torch.float32)
+# testX = torch.tensor(test_X[:, :, None], dtype=torch.float32)
+# testY = torch.tensor(test_Y[:, None], dtype=torch.float32)
 # print(f'testX {testX.size()}')
 
-# time_steps = np.arange(0, test_dataset_size)
+# time_steps = np.arange(SEQUENCE_SIZE, len(dataset_test))
+
+train_X, train_Y = train_ref, target_train
+test_X, test_Y = test[0,:,:,:], target_test[0,:,:]
+
+trainX = torch.tensor(train_X[:, :], dtype=torch.float32)
+trainY = torch.tensor(train_Y[:], dtype=torch.float32)
+print(f'trainX {trainX.size()}')
+
+testX = torch.tensor(test_X[:, :], dtype=torch.float32)
+testY = torch.tensor(test_Y[:], dtype=torch.float32)
+print(f'testX {testX.size()}')
+
+time_steps = np.arange(0, testX.size(0))
 
 
 print(f'testY dim {np.shape(testY)}')
@@ -161,10 +161,10 @@ plt.plot(time_steps, testY, label='Original Data')
 #-------------------------------HYPERPARAMETERS-------------------------------------------
 lr=0.005
 input_size=1
-hidden_size= 16
+hidden_size= 64
 num_layers=1
 output_size=1
-num_epochs = 1000
+num_epochs = 100
 h0, c0 = None, None
 #----------------------------------------------------------------------------------------
 
@@ -193,21 +193,21 @@ for epoch in range(num_epochs):
 
     if (epoch+1) % 10 == 0:
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
-        model.eval()
-        predicted, _, _ = model(testX, h0, c0)
+        # model.eval()
+        # predicted, _, _ = model(testX, h0, c0)
 
-        plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
-        line1.set_xdata(time_steps)
-        line1.set_ydata(predicted.detach().numpy())
-        figure.canvas.draw()
-        figure.canvas.flush_events()
+        # plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
+        # line1.set_xdata(time_steps)
+        # line1.set_ydata(predicted.detach().numpy())
+        # figure.canvas.draw()
+        # figure.canvas.flush_events()
         
 
-    if (epoch+1) % int(num_epochs/4) == 0:
-        model.eval()
-        with torch.no_grad():
-            predicted, _, _ = model(testX, h0, c0)
-            prediction.append(predicted.detach().numpy())
+    # if (epoch+1) % int(num_epochs/4) == 0:
+    #     model.eval()
+    #     with torch.no_grad():
+    #         predicted, _, _ = model(testX, h0, c0)
+    #         prediction.append(predicted.detach().numpy())
 
 
 torch.save(model.state_dict(), 'test')
@@ -215,7 +215,7 @@ torch.save(model.state_dict(), 'test')
 plt.ioff()
 
 model.eval()
-predicted, _, _ = model(testX, h0, c0)
+predicted, _, _ = model(testX)
 
 with open('prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
