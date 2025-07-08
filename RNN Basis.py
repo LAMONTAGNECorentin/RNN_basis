@@ -20,6 +20,7 @@ import csv
 import torch.optim as optim
 import model
 import Myfunction
+import time
 
 torch.manual_seed(100)
 
@@ -163,81 +164,84 @@ plt.plot(time_steps, testY, label='Original Data')
 #-------------------------------HYPERPARAMETERS-------------------------------------------
 lr=0.001
 input_size=1
-hidden_size= 64
+HIDDEN_SIZE= [16, 32, 64]
 num_layers=2
 output_size=1
 num_epochs = 500
 h0, c0 = None, None
 #----------------------------------------------------------------------------------------
 
-model = model.LSTM_model(input_size, hidden_size, num_layers, output_size)
-criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr)
+for hidden_size in HIDDEN_SIZE:
 
-Loss_history = []
-prediction = []
+    Time = time.time()
+    model = model.LSTM_model(input_size, hidden_size, num_layers, output_size)
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr)
 
-for epoch in range(num_epochs):
-    model.train()
-    #add scheduler here
-    optimizer.zero_grad()
+    Loss_history = []
+    prediction = []
 
-    outputs, h0, c0 = model(trainX, h0, c0)
+    for epoch in range(num_epochs):
+        model.train()
+        #add scheduler here
+        optimizer.zero_grad()
 
-    loss = criterion(outputs, trainY)
-    loss.backward()
-    optimizer.step()
+        outputs, h0, c0 = model(trainX, h0, c0)
 
-    h0 = h0.detach()
-    c0 = c0.detach()
+        loss = criterion(outputs, trainY)
+        loss.backward()
+        optimizer.step()
 
-    Loss_history.append(loss.item())
+        h0 = h0.detach()
+        c0 = c0.detach()
 
-    if (epoch+1) % 10 == 0:
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
-        model.eval()
-        predicted, _, _ = model(testX)
+        Loss_history.append(loss.item())
 
-        plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
-        line1.set_xdata(time_steps)
-        line1.set_ydata(predicted.detach().numpy())
-        figure.canvas.draw()
-        figure.canvas.flush_events()
-        
-
-    if (epoch+1) % int(num_epochs/4) == 0:
-        model.eval()
-        with torch.no_grad():
+        if (epoch+1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+            model.eval()
             predicted, _, _ = model(testX)
-            prediction.append(predicted.detach().numpy())
 
+            plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
+            line1.set_xdata(time_steps)
+            line1.set_ydata(predicted.detach().numpy())
+            figure.canvas.draw()
+            figure.canvas.flush_events()
+            
 
-torch.save(model.state_dict(), 'test')
+        if (epoch+1) % int(num_epochs/4) == 0:
+            model.eval()
+            with torch.no_grad():
+                predicted, _, _ = model(testX)
+                prediction.append(predicted.detach().numpy())
 
-plt.ioff()
+    Time = time.time()-Time
+    torch.save(model.state_dict(), f'SS={SEQUENCE_SIZE}_lr={lr}_hs={hidden_size}_num-layers={num_layers}_epochs{num_epochs}_time={Time}')
 
-model.eval()
-predicted, _, _ = model(testX)
+    plt.ioff()
 
-with open('prediction.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerows(predicted.detach().numpy())
+    model.eval()
+    predicted, _, _ = model(testX)
 
-original = dataset_test[SEQUENCE_SIZE:]
+    with open('prediction.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(predicted.detach().numpy())
 
-plt.figure(figsize=(12, 6))
-plt.subplot(1,2,1)
-plt.plot(Loss_history, label='Loss')
-plt.title('LSTM Loss evolution')
-plt.xlabel('Epoch')
-plt.ylabel('Value')
-plt.legend()
+    original = dataset_test[SEQUENCE_SIZE:]
 
-plt.subplot(1,2,2)
-plt.plot(time_steps, testY, label='Original Data')
-plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
-plt.title('LSTM Model Predictions vs. Original Data')
-plt.xlabel('Time Step')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1,2,1)
+    plt.plot(Loss_history, label='Loss')
+    plt.title('LSTM Loss evolution')
+    plt.xlabel('Epoch')
+    plt.ylabel('Value')
+    plt.legend()
+
+    plt.subplot(1,2,2)
+    plt.plot(time_steps, testY, label='Original Data')
+    plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
+    plt.title('LSTM Model Predictions vs. Original Data')
+    plt.xlabel('Time Step')
+    plt.ylabel('Value')
+    plt.legend()
+    plt.show()
