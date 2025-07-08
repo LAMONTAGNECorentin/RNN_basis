@@ -45,7 +45,6 @@ train_dataset_size = int(Ts_train/Ts)
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = Myfunction.read_noise('')
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = f16_ref/(2**15), leopard_ref/(2**15), volvo_ref/(2**15), destroyerengine_ref/(2**15)
 
-
 kind = 'cubic'
 fs_orig=19.98*10**3             # 19.98Khz
 size = int(len(f16_ref) * fs_resample / fs_orig)
@@ -122,25 +121,34 @@ testloader = [torch.utils.data.DataLoader(test_dataset[0], batch_size = 1, num_w
 #----------------------------------------------------------------------------------------------------------
 
 
-split_size = 30
-# X, Y = dc.split_sequence(dataset, split_size)
-# Xt, Yt = dc.split_sequence(dataset_test, split_size)
+train_X, train_Y = dc.split_sequence(dataset, SEQUENCE_SIZE)
+test_X, test_Y = dc.split_sequence(dataset_test, SEQUENCE_SIZE)
 # for i in range(len(X)):
 # 	print(X[i], Y[i])
 
-trainX, trainY = train_ref, target_train
-testX, testY = test, target_test 
-
-# trainX = torch.tensor(X[:, :, None], dtype=torch.float32)
-# trainY = torch.tensor(Y[:, None], dtype=torch.float32)
+trainX = torch.tensor(train_X[:, :, None], dtype=torch.float32)
+trainY = torch.tensor(train_Y[:, None], dtype=torch.float32)
 print(f'trainX {trainX.size()}')
 
-# testX = torch.tensor(Xt[:, :, None], dtype=torch.float32)
-# testY = torch.tensor(Yt[:, None], dtype=torch.float32)
+testX = torch.tensor(test_X[:, :, None], dtype=torch.float32)
+testY = torch.tensor(test_Y[:, None], dtype=torch.float32)
 print(f'testX {testX.size()}')
 
-# time_steps = np.arange(split_size, len(dataset_test))
-time_steps = np.arange(split_size, 10030)
+time_steps = np.arange(SEQUENCE_SIZE, len(dataset_test))
+
+# train_X, train_Y = train_ref, target_train
+# test_X, test_Y = test[0,:,:,:], target_test[0,:,:]
+
+# trainX = torch.tensor(train_X[:, :], dtype=torch.float32)
+# trainY = torch.tensor(train_Y[:], dtype=torch.float32)
+# print(f'trainX {trainX.size()}')
+
+# testX = torch.tensor(test_X[:, :], dtype=torch.float32)
+# testY = torch.tensor(test_Y[:], dtype=torch.float32)
+# print(f'testX {testX.size()}')
+
+# time_steps = np.arange(0, test_dataset_size)
+
 
 print(f'testY dim {np.shape(testY)}')
 
@@ -213,7 +221,7 @@ with open('prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(predicted.detach().numpy())
 
-original = dataset_test[split_size:]
+original = dataset_test[SEQUENCE_SIZE:]
 
 plt.figure(figsize=(12, 6))
 plt.subplot(1,2,1)
