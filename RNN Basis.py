@@ -163,10 +163,10 @@ plt.plot(time_steps, testY, label='Original Data')
 #-------------------------------HYPERPARAMETERS-------------------------------------------
 lr=0.001
 input_size=1
-hidden_size= 32
-num_layers=1
+hidden_size= 64
+num_layers=2
 output_size=1
-num_epochs = 100
+num_epochs = 500
 h0, c0 = None, None
 #----------------------------------------------------------------------------------------
 

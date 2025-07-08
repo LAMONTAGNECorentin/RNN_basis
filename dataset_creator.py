@@ -43,7 +43,7 @@ def sinus_nonlinear(start=0, end=10, step=0.01, amplitude=1, style=0):
     elif style == 2:
         return np.tanh(2 * sinus)                           # Fonction de saturation
     elif style == 3:
-        return np.clip(sinus, -0.5, 0.5)                    # Ecrêtage
+        return np.clip(sinus, -amplitude/2, amplitude/2)                    # Ecrêtage
     elif style == 4:
         modulator = 1 + 0.5 * np.sin(0.1 * 2 * np.pi * t)   # Modulation non-linéaire
         return modulator * np.sin(2 * np.pi * t)
