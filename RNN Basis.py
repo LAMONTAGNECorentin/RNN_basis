@@ -23,8 +23,11 @@ import Myfunction
 
 torch.manual_seed(100)
 
-dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
-dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
+# dataset = dc.sinus(start=0, end=100, step=0.1, amplitude=5, style=0)
+# dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
+
+dataset = dc.sinus_nonlinear(start=0, end=10, step=0.01, amplitude=5, style=3)
+dataset_test = dc.sinus_nonlinear(start=0.01, end=10.01, step=0.01, amplitude=5, style=3)
 
 #----------------------------------------------------------------------------------------------------------
 output_size = 1
@@ -64,10 +67,6 @@ f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = f16_ref_temp.copy(), leop
 # 一次信号の変数に、参照信号の値を代入する(_pri = _ref)
 f16_pri, leopard_pri, volvo_pri, destroyerengine_pri = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
 
-plt.plot(f16_ref[:1000])
-plt.title('F16 Reference Signal (upsampled)')
-plt.show()
-
 divide = int(f16_pri.shape[0]*0.5)
 
 NOISE_train_ref = np.vstack([f16_ref[:divide], leopard_ref[:divide], volvo_ref[:divide], destroyerengine_ref[:divide]])
@@ -101,14 +100,14 @@ for train_set_num in range(TRAIN_SET_NUM):
 # テストセットの生成
 test = np.zeros([4, test_dataset_size, SEQUENCE_SIZE])
 target_test = np.zeros([4, test_dataset_size, output_size])
-test_for_Einput_to_ref = np.zeros([4, test_dataset_size, output_size]) # Einputで、参照信号に対するノイズ元帥率を計算するための、参照信号のエネルギー
+# test_for_Einput_to_ref = np.zeros([4, test_dataset_size, output_size]) # Einputで、参照信号に対するノイズ元帥率を計算するための、参照信号のエネルギー
 # NOISE_testのなかからランダムにtest_dataset_size個のデータを取り出す。    
 for i in range(test_dataset_size) : 
     r = test_list[i]
     for j in range(4):
         test[j, i] = NOISE_test_ref[j,r:r+SEQUENCE_SIZE,0] ############################################################## 入力はref
         target_test[j, i] = NOISE_test_pri[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]######################################################### 教師はpri
-        test_for_Einput_to_ref[j,i] = NOISE_test_ref[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]
+        # test_for_Einput_to_ref[j,i] = NOISE_test_ref[j,r+SEQUENCE_SIZE+predict_sample_num-1,0]
 
 train_ref = torch.DoubleTensor(train_ref[:,:,np.newaxis])
 print(f'train_ref {np.shape(train_ref)}')
@@ -125,33 +124,33 @@ testloader = [torch.utils.data.DataLoader(test_dataset[0], batch_size = 1, num_w
 #----------------------------------------------------------------------------------------------------------
 
 
-# train_X, train_Y = dc.split_sequence(dataset, SEQUENCE_SIZE)
-# test_X, test_Y = dc.split_sequence(dataset_test, SEQUENCE_SIZE)
-# # for i in range(len(X)):
-# # 	print(X[i], Y[i])
+train_X, train_Y = dc.split_sequence(dataset, SEQUENCE_SIZE)
+test_X, test_Y = dc.split_sequence(dataset_test, SEQUENCE_SIZE)
+# for i in range(len(X)):
+# 	print(X[i], Y[i])
 
-# trainX = torch.tensor(train_X[:, :, None], dtype=torch.float32)
-# trainY = torch.tensor(train_Y[:, None], dtype=torch.float32)
-# print(f'trainX {trainX.size()}')
-
-# testX = torch.tensor(test_X[:, :, None], dtype=torch.float32)
-# testY = torch.tensor(test_Y[:, None], dtype=torch.float32)
-# print(f'testX {testX.size()}')
-
-# time_steps = np.arange(SEQUENCE_SIZE, len(dataset_test))
-
-train_X, train_Y = train_ref, target_train
-test_X, test_Y = test[0,:,:,:], target_test[0,:,:]
-
-trainX = torch.tensor(train_X[:, :], dtype=torch.float32)
-trainY = torch.tensor(train_Y[:], dtype=torch.float32)
+trainX = torch.tensor(train_X[:, :, None], dtype=torch.float32)
+trainY = torch.tensor(train_Y[:, None], dtype=torch.float32)
 print(f'trainX {trainX.size()}')
 
-testX = torch.tensor(test_X[:, :], dtype=torch.float32)
-testY = torch.tensor(test_Y[:], dtype=torch.float32)
+testX = torch.tensor(test_X[:, :, None], dtype=torch.float32)
+testY = torch.tensor(test_Y[:, None], dtype=torch.float32)
 print(f'testX {testX.size()}')
 
-time_steps = np.arange(0, testX.size(0))
+time_steps = np.arange(SEQUENCE_SIZE, len(dataset_test))
+
+# train_X, train_Y = train_ref, target_train
+# test_X, test_Y = test[0,:,:,:], target_test[0,:,:]
+
+# trainX = torch.tensor(train_X[:, :], dtype=torch.float32)
+# trainY = torch.tensor(train_Y[:], dtype=torch.float32)
+# print(f'trainX {trainX.size()}')
+
+# testX = torch.tensor(test_X[:, :], dtype=torch.float32)
+# testY = torch.tensor(test_Y[:], dtype=torch.float32)
+# print(f'testX {testX.size()}')
+
+# time_steps = np.arange(0, testX.size(0))
 
 
 plt.ion()
