@@ -30,7 +30,7 @@ dataset_test = dc.sinus(start=0.1, end=100.1, step=0.1, amplitude=5, style=0)
 output_size = 1
 test_dataset_size = 10000
 TRAIN_SET_NUM = 10
-SEQUENCE_SIZE = 10
+SEQUENCE_SIZE = 20
 Ts_train = 0.001                # Training period
 predict_sample_num = 1
 batchsize = 1
@@ -63,6 +63,10 @@ f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = np.zeros([size,1]),np.zer
 f16_ref, leopard_ref, volvo_ref, destroyerengine_ref = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
 # 一次信号の変数に、参照信号の値を代入する(_pri = _ref)
 f16_pri, leopard_pri, volvo_pri, destroyerengine_pri = f16_ref_temp.copy(), leopard_ref_temp.copy(), volvo_ref_temp.copy(), destroyerengine_ref_temp.copy()
+
+plt.plot(f16_ref[:1000])
+plt.title('F16 Reference Signal (upsampled)')
+plt.show()
 
 divide = int(f16_pri.shape[0]*0.5)
 
@@ -150,18 +154,17 @@ print(f'testX {testX.size()}')
 time_steps = np.arange(0, testX.size(0))
 
 
-print(f'testY dim {np.shape(testY)}')
-
 plt.ion()
 
 figure, ax = plt.subplots(figsize=(8, 6))
-(line1,) = ax.plot(time_steps, testY)
 plt.plot(time_steps, testY, label='Original Data')
+(line1,) = ax.plot(time_steps, testY)
+
 
 #-------------------------------HYPERPARAMETERS-------------------------------------------
-lr=0.005
+lr=0.001
 input_size=1
-hidden_size= 64
+hidden_size= 32
 num_layers=1
 output_size=1
 num_epochs = 100
@@ -193,21 +196,21 @@ for epoch in range(num_epochs):
 
     if (epoch+1) % 10 == 0:
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
-        # model.eval()
-        # predicted, _, _ = model(testX, h0, c0)
+        model.eval()
+        predicted, _, _ = model(testX)
 
-        # plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
-        # line1.set_xdata(time_steps)
-        # line1.set_ydata(predicted.detach().numpy())
-        # figure.canvas.draw()
-        # figure.canvas.flush_events()
+        plt.title(f'Epoch [{epoch+1}/{num_epochs}]')
+        line1.set_xdata(time_steps)
+        line1.set_ydata(predicted.detach().numpy())
+        figure.canvas.draw()
+        figure.canvas.flush_events()
         
 
-    # if (epoch+1) % int(num_epochs/4) == 0:
-    #     model.eval()
-    #     with torch.no_grad():
-    #         predicted, _, _ = model(testX, h0, c0)
-    #         prediction.append(predicted.detach().numpy())
+    if (epoch+1) % int(num_epochs/4) == 0:
+        model.eval()
+        with torch.no_grad():
+            predicted, _, _ = model(testX)
+            prediction.append(predicted.detach().numpy())
 
 
 torch.save(model.state_dict(), 'test')
