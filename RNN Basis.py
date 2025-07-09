@@ -33,10 +33,10 @@ torch.manual_seed(100)
 # dataset_test = dc.sinus_nonlinear(start=0.01, end=10.01, step=0.01, amplitude=5, style=3)
 
 #-------------------------------HYPERPARAMETERS-------------------------------------------
-lr=0.001
+lr=0.01
 input_size=1
-HIDDEN_SIZE= [16, 32, 64]
-NUM_LAYERS= [1, 2, 3]
+HIDDEN_SIZE= [64]
+NUM_LAYERS= [3]
 output_size=1
 EPOCH = [1500]
 h0, c0 = None, None
@@ -45,21 +45,21 @@ h0, c0 = None, None
 #----------------------------------------------------------------------------------------------------------
 output_size = 1
 TEST_DATASET_SIZE = [10000]
-train_set_num = [10, 20, 50]
-SEQUENCE_SIZE = [10, 20, 50]
+train_set_num = [10]
+SEQUENCE_SIZE = [10]
 Ts_train = 0.001                # Training period
 predict_sample_num = 1
 batchsize = 1
 fs_resample = 44.1              # Frequency
 
 Tot_iter = len(HIDDEN_SIZE)*len(NUM_LAYERS)*len(TEST_DATASET_SIZE)*len(SEQUENCE_SIZE)*len(train_set_num)
-
 i=0
 loss_LOG, test_dataset_size_LOG, sequence_size_LOG, lr_LOG, hidden_size_LOG, num_layers_LOG, num_epochs_LOG, Time_LOG = [],[],[],[],[],[],[],[]
+
 for TRAIN_SET_NUM in train_set_num:
     for sequence_size in SEQUENCE_SIZE:
         for test_dataset_size in TEST_DATASET_SIZE:
-            train_ref, target_train, test, target_test = f.pre_treatement(output_size, test_dataset_size, TRAIN_SET_NUM, sequence_size, Ts_train, predict_sample_num, batchsize, fs_resample)
+            train_ref, target_train, test, target_test = f.pre_treatement_set1(output_size, test_dataset_size, TRAIN_SET_NUM, sequence_size, Ts_train, predict_sample_num, batchsize, fs_resample)
 
             #----------------------------------------------------------------------------------------------------------
 
@@ -168,22 +168,22 @@ for TRAIN_SET_NUM in train_set_num:
 
                         # original = dataset_test[sequence_size:]
 
-                        # plt.figure(figsize=(12, 6))
-                        # plt.subplot(1,2,1)
-                        # plt.plot(Loss_history, label='Loss')
-                        # plt.title('LSTM Loss evolution')
-                        # plt.xlabel('Epoch')
-                        # plt.ylabel('Value')
-                        # plt.legend()
+                        plt.figure(figsize=(12, 6))
+                        plt.subplot(1,2,1)
+                        plt.plot(Loss_history, label='Loss')
+                        plt.title('LSTM Loss evolution')
+                        plt.xlabel('Epoch')
+                        plt.ylabel('Value')
+                        plt.legend()
 
-                        # plt.subplot(1,2,2)
-                        # plt.plot(time_steps, testY, label='Original Data')
-                        # plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
-                        # plt.title('LSTM Model Predictions vs. Original Data')
-                        # plt.xlabel('Time Step')
-                        # plt.ylabel('Value')
-                        # plt.legend()
-                        # plt.show()
+                        plt.subplot(1,2,2)
+                        plt.plot(time_steps, testY, label='Original Data')
+                        plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
+                        plt.title('LSTM Model Predictions vs. Original Data')
+                        plt.xlabel('Time Step')
+                        plt.ylabel('Value')
+                        plt.legend()
+                        plt.show()
 
 data = {
     "Loss":loss_LOG,
@@ -197,5 +197,6 @@ data = {
 }
 
 df = pd.DataFrame(data)
-df.to_excel("batch.xlsx", index=False)
+name = f'batch_{time.strftime("%d%b-%H-%M-%S", time.localtime())}'
+df.to_excel(f"batch_{name}.xlsx", index=False)
 
