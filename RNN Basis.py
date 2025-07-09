@@ -22,6 +22,7 @@ import model
 import Myfunction
 import time
 import Function as f
+import pandas as pd
 
 torch.manual_seed(100)
 
@@ -52,7 +53,9 @@ batchsize = 1
 fs_resample = 44.1              # Frequency
 
 Tot_iter = len(HIDDEN_SIZE)+len(NUM_LAYERS)+len(TEST_DATASET_SIZE)+len(SEQUENCE_SIZE)
+
 i=0
+loss_LOG, test_dataset_size_LOG, sequence_size_LOG, lr_LOG, hidden_size_LOG, num_layers_LOG, num_epochs_LOG, Time_LOG = [],[],[],[],[],[],[],[]
 
 for sequence_size in SEQUENCE_SIZE:
     for test_dataset_size in TEST_DATASET_SIZE:
@@ -146,7 +149,14 @@ for sequence_size in SEQUENCE_SIZE:
 
                     Time = time.time()-Time
                     torch.save(Mymodel.state_dict(), f'Loss_{loss.item()}_TDS_{test_dataset_size}_SS_{sequence_size}_lr_{lr}_hs_{hidden_size}_num-layers_{num_layers}_epochs_{num_epochs}_time_{Time}')
-
+                    loss_LOG.append(loss.item())
+                    test_dataset_size_LOG.append(test_dataset_size)
+                    sequence_size_LOG.append(sequence_size)
+                    lr_LOG.append(lr)
+                    hidden_size_LOG.append(hidden_size)
+                    num_layers_LOG.append(num_layers)
+                    num_epochs_LOG.append(num_epochs)
+                    Time_LOG.append(Time)
                     # plt.ioff()
 
                     Mymodel.eval()
@@ -174,3 +184,18 @@ for sequence_size in SEQUENCE_SIZE:
                     # plt.ylabel('Value')
                     # plt.legend()
                     # plt.show()
+
+data = {
+    "Loss":loss_LOG,
+    "TDS":test_dataset_size_LOG,
+    "SS":sequence_size_LOG,
+    "lr":lr_LOG,
+    "hs":hidden_size_LOG,
+    "num-layers":num_layers_LOG,
+    "epochs":num_epochs_LOG,
+    "time":Time_LOG
+}
+
+df = pd.DataFrame(data)
+df.to_excel(f'batch_{time.time}.xlsx', index=False)
+

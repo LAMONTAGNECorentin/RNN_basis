@@ -53,8 +53,9 @@ def sinus_nonlinear(start=0, end=10, step=0.01, amplitude=1, style=0):
 import pandas as pd
 
 # Create a DataFrame
+mat = ["Alice", "Bob"]
 data = {
-    "Name": ["Alice", "Bob"],
+    "Name": mat,
     "Age": [30, 25]
 }
 df = pd.DataFrame(data)
