@@ -44,22 +44,22 @@ h0, c0 = None, None
 
 #----------------------------------------------------------------------------------------------------------
 output_size = 1
-TEST_DATASET_SIZE = [10000]
-train_set_num = [10]
-SEQUENCE_SIZE = [10]
+TEST_DATASET_SIZE = [20000]
+TRAIN_SET_NUM = [20, 30]
+SEQUENCE_SIZE = [20]
 Ts_train = 0.001                # Training period
 predict_sample_num = 1
 batchsize = 1
 fs_resample = 44.1              # Frequency
 
-Tot_iter = len(HIDDEN_SIZE)*len(NUM_LAYERS)*len(TEST_DATASET_SIZE)*len(SEQUENCE_SIZE)*len(train_set_num)
+Tot_iter = len(HIDDEN_SIZE)*len(NUM_LAYERS)*len(TEST_DATASET_SIZE)*len(SEQUENCE_SIZE)*len(TRAIN_SET_NUM)
 i=0
 loss_LOG, test_dataset_size_LOG, sequence_size_LOG, lr_LOG, hidden_size_LOG, num_layers_LOG, num_epochs_LOG, Time_LOG = [],[],[],[],[],[],[],[]
 
-for TRAIN_SET_NUM in train_set_num:
+for train_set_num in TRAIN_SET_NUM:
     for sequence_size in SEQUENCE_SIZE:
         for test_dataset_size in TEST_DATASET_SIZE:
-            train_ref, target_train, test, target_test = f.pre_treatement_set1(output_size, test_dataset_size, TRAIN_SET_NUM, sequence_size, Ts_train, predict_sample_num, batchsize, fs_resample)
+            train_ref, target_train, test, target_test = f.pre_treatement_set3(output_size, test_dataset_size, train_set_num, sequence_size, Ts_train, predict_sample_num, batchsize, fs_resample)
 
             #----------------------------------------------------------------------------------------------------------
 
@@ -168,22 +168,22 @@ for TRAIN_SET_NUM in train_set_num:
 
                         # original = dataset_test[sequence_size:]
 
-                        plt.figure(figsize=(12, 6))
-                        plt.subplot(1,2,1)
-                        plt.plot(Loss_history, label='Loss')
-                        plt.title('LSTM Loss evolution')
-                        plt.xlabel('Epoch')
-                        plt.ylabel('Value')
-                        plt.legend()
+                        # plt.figure(figsize=(12, 6))
+                        # plt.subplot(1,2,1)
+                        # plt.plot(Loss_history, label='Loss')
+                        # plt.title('LSTM Loss evolution')
+                        # plt.xlabel('Epoch')
+                        # plt.ylabel('Value')
+                        # plt.legend()
 
-                        plt.subplot(1,2,2)
-                        plt.plot(time_steps, testY, label='Original Data')
-                        plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
-                        plt.title('LSTM Model Predictions vs. Original Data')
-                        plt.xlabel('Time Step')
-                        plt.ylabel('Value')
-                        plt.legend()
-                        plt.show()
+                        # plt.subplot(1,2,2)
+                        # plt.plot(time_steps, testY, label='Original Data')
+                        # plt.plot(time_steps, predicted.detach().numpy(), label='Predicted Data', linestyle='--')
+                        # plt.title('LSTM Model Predictions vs. Original Data')
+                        # plt.xlabel('Time Step')
+                        # plt.ylabel('Value')
+                        # plt.legend()
+                        # plt.show()
 
 data = {
     "Loss":loss_LOG,

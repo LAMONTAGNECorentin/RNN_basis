@@ -50,15 +50,3 @@ def sinus_nonlinear(start=0, end=10, step=0.01, amplitude=1, style=0):
     else:
         return sinus
     
-import pandas as pd
-
-# Create a DataFrame
-mat = ["Alice", "Bob"]
-data = {
-    "Name": mat,
-    "Age": [30, 25]
-}
-df = pd.DataFrame(data)
-
-# Write the DataFrame to an Excel file
-df.to_excel("example_pandas.xlsx", index=False)
